@@ -1,4 +1,22 @@
+import codecs
+import re
+
 from coverage.report import Reporter
+
+
+def read_file_lines(filename):
+    with open(filename, "r") as opened_file:
+        encoding_line = opened_file.readline()
+
+    encoding_regex = re.compile('# -\*- coding:(.*) -\*-')
+    results = re.search(encoding_regex, encoding_line)
+    if results:
+        encoding = results.groups()[0]
+    else:
+        encoding = 'utf-8'
+    with codecs.open(filename, "r", encoding) as fp:
+        source = fp.readlines()
+    return source
 
 
 class CoverallsReporter(Reporter):
@@ -6,8 +24,7 @@ class CoverallsReporter(Reporter):
         self.find_code_units(None)
         ret = []
         for cu in self.code_units:
-            with open(cu.filename) as fp:
-                source = fp.readlines()
+            source = read_file_lines(cu.filename)
             analysis = self.coverage._analyze(cu)
             coverage_list = [None for _ in source]
             for lineno, line in enumerate(source):
